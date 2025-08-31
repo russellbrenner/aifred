@@ -119,6 +119,7 @@ Continue @cont and refine the migration plan @temp:0.2
 - Routing: Model hint and/or `@provider` select OpenAI or Anthropic; otherwise defaults.
 - Tools: Requested tools are validated per provider capability. Unsupported tools are dropped and noted in the reply header.
 - Context: History is trimmed approximately to fit under `AIFRED_MAX_INPUT_TOKENS` (oldest first), while reserving part of the budget for completions.
+ - Tool schemas are included in requests (OpenAI function tools; Anthropic tool definitions), but actual tool execution is not performed yet. Tool calls are surfaced in metadata and will be executed in a later pass.
 
 ## Testing
 Run all tests:
