@@ -257,5 +257,53 @@ def main():
         else:
             print(data)
 
+    elif command == "export":
+        if len(sys.argv) < 3:
+            print("Usage: python aifred.py export <thread_id> [--format md|html] [output_path]")
+            return
+        thread_id_s = sys.argv[2]
+        fmt = "md"
+        output_path = None
+        for arg in sys.argv[3:]:
+            if arg.startswith("--format"):
+                parts = arg.split()
+                if ":" in arg:
+                    fmt = arg.split(":", 1)[1]
+                elif len(parts) > 1:
+                    fmt = parts[1]
+            else:
+                output_path = arg
+        try:
+            thread_id = int(thread_id_s)
+        except ValueError:
+            print("thread_id must be an integer")
+            return
+        store = Store()
+        thread = store.get_thread(thread_id)
+        if not thread:
+            print("Thread not found")
+            return
+        messages = store.get_thread_messages(thread.id)
+        if fmt == "md":
+            lines = [f"# {thread.name or '(untitled)'}", "", f"Provider: {thread.provider}  ", f"Model: {thread.model}", ""]
+            for m in messages:
+                lines.append(f"**{m.role}**: {m.content}")
+            out = "\n\n".join(lines)
+        elif fmt == "html":
+            parts = ["<html><body>", f"<h1>{thread.name or '(untitled)'}</h1>", f"<p><b>Provider:</b> {thread.provider} <b>Model:</b> {thread.model}</p>")
+            for m in messages:
+                parts.append(f"<p><b>{m.role}</b>: {m.content}</p>")
+            parts.append("</body></html>")
+            out = "".join(parts)
+        else:
+            print("Unsupported format; use md or html")
+            return
+        if output_path:
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(out)
+            print(f"Exported to {output_path}")
+        else:
+            print(out)
+
 if __name__ == "__main__":
     main()

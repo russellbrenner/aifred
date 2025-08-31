@@ -202,7 +202,14 @@ def handle_action(arg: str) -> None:
         )
 
     # Optional: copy response text to clipboard
-    if text and os.getenv("AIFRED_COPY_CLIPBOARD") == "1":
+    copy_clip = os.getenv("AIFRED_COPY_CLIPBOARD") == "1"
+    if not copy_clip:
+        try:
+            from utils.user_config import get_option
+            copy_clip = bool(get_option("copy_clipboard", False))
+        except Exception:
+            copy_clip = False
+    if text and copy_clip:
         try:
             from subprocess import Popen, PIPE
             p = Popen(["pbcopy"], stdin=PIPE)

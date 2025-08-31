@@ -21,6 +21,13 @@ def get_defaults() -> Defaults:
     # Rough input token cap for history (independent of output max)
     max_input_tokens = int(os.getenv("AIFRED_MAX_INPUT_TOKENS", "4000"))
     profile = os.getenv("AIFRED_PROFILE", "default")
+    # Overlay with user config if present
+    try:
+        from utils.user_config import get_option
+        profile = get_option("profile", profile)
+        max_input_tokens = int(get_option("max_input_tokens", max_input_tokens))
+    except Exception:
+        pass
     return Defaults(provider, model_openai, model_anthropic, max_input_tokens, profile)
 
 
