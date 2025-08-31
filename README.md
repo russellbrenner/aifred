@@ -103,7 +103,7 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `@name:research` → name thread
 - `@new` → force a new thread
 - `@cont` → continue most recent (provider/model if specified)
-- `@tools:browse,code,python` → request tools (provider-validated)
+- `@tools:browse,code,python,fetch_url,citation_extract,case_search` → request tools (provider-validated)
   - With `AIFRED_TOOL_EXEC=1`, supported tool calls execute once and are included in a follow-up response.
 
 ### Examples
@@ -122,7 +122,12 @@ Continue @cont and refine the migration plan @temp:0.2
 - Routing: Model hint and/or `@provider` select OpenAI or Anthropic; otherwise defaults.
 - Tools: Requested tools are validated per provider capability. Unsupported tools are dropped and noted in the reply header.
 - Context: History is trimmed approximately to fit under `AIFRED_MAX_INPUT_TOKENS` (oldest first), while reserving part of the budget for completions.
-- Tool schemas are included in requests (OpenAI function tools; Anthropic tool definitions). If `AIFRED_TOOL_EXEC=1`, basic tool execution is performed (e.g., `web_search` via DuckDuckGo HTML); results are appended as tool messages and a second model call is made.
+- Tool schemas are included in requests (OpenAI function tools; Anthropic tool definitions). If `AIFRED_TOOL_EXEC=1`, basic tool execution is performed:
+  - `web_search`: DuckDuckGo Instant Answer (JSON) with HTML fallback.
+  - `fetch_url`: Fetches and extracts readable text from a URL (best-effort).
+  - `citation_extract`: Extracts basic case and U.S.C. citations from provided text.
+  - `case_search`: Queries CourtListener API for cases (best-effort, public API).
+  Results are appended as tool messages and a second model call is made.
 
 ## Testing
 Run all tests:
