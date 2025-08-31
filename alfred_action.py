@@ -164,6 +164,15 @@ def handle_action(arg: str) -> None:
             usage,
         )
 
+    # Optional: copy response text to clipboard
+    if text and os.getenv("AIFRED_COPY_CLIPBOARD") == "1":
+        try:
+            from subprocess import Popen, PIPE
+            p = Popen(["pbcopy"], stdin=PIPE)
+            p.communicate(input=text.encode("utf-8"))
+        except Exception:
+            pass
+
 
 def main() -> None:
     if len(sys.argv) < 2:
