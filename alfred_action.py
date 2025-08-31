@@ -1,168 +1,177 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import json
-import sqlite3
-import sys
 import os
-import requests
-from pathlib import Path
-from aifred import AifredDB
+import sys
+from typing import Dict, List
 
-class AIClient:
-    def __init__(self):
-        self.openai_key = os.getenv('OPENAI_API_KEY')
-        self.claude_key = os.getenv('CLAUDE_API_KEY')
-    
-    def continue_chatgpt_conversation(self, messages, new_message):
-        if not self.openai_key:
-            return "Error: OpenAI API key not configured"
-        
-        headers = {
-            'Authorization': f'Bearer {self.openai_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        # Convert stored messages to OpenAI format
-        conversation = []
-        for msg in messages:
-            if msg.get('author', {}).get('role') in ['user', 'assistant']:
-                conversation.append({
-                    'role': msg['author']['role'],
-                    'content': msg.get('content', {}).get('parts', [''])[0]
-                })
-        
-        # Add new message
-        conversation.append({'role': 'user', 'content': new_message})
-        
-        data = {
-            'model': 'gpt-4',
-            'messages': conversation,
-            'max_tokens': 1000
-        }
-        
-        try:
-            response = requests.post(
-                'https://api.openai.com/v1/chat/completions',
-                headers=headers,
-                json=data
-            )
-            response.raise_for_status()
-            return response.json()['choices'][0]['message']['content']
-        except Exception as e:
-            return f"Error: {str(e)}"
-    
-    def continue_claude_conversation(self, messages, new_message):
-        if not self.claude_key:
-            return "Error: Claude API key not configured"
-        
-        headers = {
-            'x-api-key': self.claude_key,
-            'Content-Type': 'application/json',
-            'anthropic-version': '2023-06-01'
-        }
-        
-        # Convert stored messages to Claude format
-        conversation = []
-        for msg in messages:
-            if msg.get('sender') in ['human', 'assistant']:
-                conversation.append({
-                    'role': msg['sender'],
-                    'content': msg.get('text', '')
-                })
-        
-        # Add new message
-        conversation.append({'role': 'human', 'content': new_message})
-        
-        data = {
-            'model': 'claude-3-sonnet-20240229',
-            'max_tokens': 1000,
-            'messages': conversation
-        }
-        
-        try:
-            response = requests.post(
-                'https://api.anthropic.com/v1/messages',
-                headers=headers,
-                json=data
-            )
-            response.raise_for_status()
-            return response.json()['content'][0]['text']
-        except Exception as e:
-            return f"Error: {str(e)}"
+from providers.anthropic_client import AnthropicClient
+from providers.openai_client import OpenAIClient
+from providers.router import route, validate_tools
+from store import Store
+from utils.directives import Directives, parse_directives
+from utils.logger import get_logger
 
-def handle_action(action_arg):
-    db = AifredDB()
-    ai_client = AIClient()
-    
-    if action_arg == "import":
-        # Open file dialog for import (this would need AppleScript integration)
-        print("Import feature - select your export file")
+
+def _defaults():
+    provider = os.getenv("AIFRED_PROVIDER_DEFAULT", "openai").lower()
+    model_openai = os.getenv("AIFRED_MODEL_DEFAULT_OPENAI", "gpt-4o")
+    model_anthropic = os.getenv("AIFRED_MODEL_DEFAULT_ANTHROPIC", "claude-3-7-sonnet")
+    return provider, model_openai, model_anthropic
+
+
+def _load_system_prompt(directives_sys: str | None) -> str:
+    if directives_sys:
+        return directives_sys
+    path = os.getenv("AIFRED_SYSTEM_PROMPT_PATH")
+    if path and os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+    return "You are a helpful assistant. Keep answers concise and clear."
+
+
+def _get_client(provider: str):
+    return OpenAIClient() if provider == "openai" else AnthropicClient()
+
+
+def _resolve_provider_model(d: Directives) -> tuple[str, str]:
+    provider_default, model_openai, model_anthropic = _defaults()
+    provider = route(d.model, d.provider) if (d.model or d.provider) else provider_default
+    model = d.model or (model_openai if provider == "openai" else model_anthropic)
+    return provider, model
+
+
+def _payload_from_arg(arg: str) -> Dict:
+    try:
+        return json.loads(arg)
+    except Exception:
+        # Legacy fallbacks
+        if arg.startswith("continue:"):
+            return {"legacy": arg}
+        if arg.startswith("new:"):
+            return {"legacy": arg}
+        return {"error": "Unrecognised argument"}
+
+
+def handle_action(arg: str) -> None:
+    log = get_logger()
+    store = Store()
+
+    payload = _payload_from_arg(arg)
+    if "error" in payload:
+        print(payload["error"])
         return
-    
-    if action_arg.startswith("continue:"):
-        conv_id = action_arg[9:]
-        new_message = input("Enter your message: ")
-        
-        # Get conversation from DB
-        conn = sqlite3.connect(db.db_path)
-        cursor = conn.execute("SELECT * FROM conversations WHERE id = ?", (conv_id,))
-        result = cursor.fetchone()
-        conn.close()
-        
-        if not result:
-            print("Conversation not found")
-            return
-        
-        conv_id, title, platform, created_at, updated_at, messages_json, is_favourite, is_pinned = result
-        messages = json.loads(messages_json)
-        
-        if platform == 'chatgpt':
-            # Extract messages from ChatGPT mapping format
-            message_list = []
-            for msg_id, msg_data in messages.items():
-                if msg_data.get('message'):
-                    message_list.append(msg_data['message'])
-            
-            response = ai_client.continue_chatgpt_conversation(message_list, new_message)
-        elif platform == 'claude':
-            response = ai_client.continue_claude_conversation(messages, new_message)
-        else:
-            response = "Unsupported platform"
-        
-        print(f"AI Response:\n{response}")
-        
-        # Update conversation in DB with new exchange
-        # (Implementation would store the new message and response)
-    
-    elif action_arg.startswith("fav:"):
-        conv_id = action_arg[4:]
-        conn = sqlite3.connect(db.db_path)
-        conn.execute("UPDATE conversations SET is_favourite = NOT is_favourite WHERE id = ?", (conv_id,))
-        conn.commit()
-        conn.close()
-        print("Toggled favourite status")
-    
-    elif action_arg.startswith("pin:"):
-        conv_id = action_arg[4:]
-        conn = sqlite3.connect(db.db_path)
-        conn.execute("UPDATE conversations SET is_pinned = NOT is_pinned WHERE id = ?", (conv_id,))
-        conn.commit()
-        conn.close()
-        print("Toggled pin status")
-    
-    elif action_arg.startswith("new:"):
-        message = action_arg[4:]
-        # Start new conversation with selected AI
-        print(f"Starting new conversation: {message}")
-        # This would typically open a chat interface or send to preferred AI
 
-def main():
+    # Legacy paths currently not supported in new flow
+    if payload.get("legacy"):
+        print("Legacy actions are deprecated in this version.")
+        return
+
+    query = payload.get("query", "")
+    directives_dict = payload.get("directives", {})
+    d = Directives(**{k: directives_dict.get(k) for k in Directives().__dict__.keys() if k in directives_dict})
+
+    provider, model = _resolve_provider_model(d)
+    tools_requested = d.tools or []
+    tools_supported, tools_dropped = validate_tools(provider, tools_requested)
+
+    system_prompt = _load_system_prompt(d.sys)
+
+    # Resolve thread
+    thread_hint = payload.get("thread_hint")
+    thread = None
+    if d.new:
+        thread_id = store.create_thread(provider, model, d.name)
+        thread = store.get_latest_thread(provider, model)
+    elif thread_hint and isinstance(thread_hint, dict) and thread_hint.get("id"):
+        # Minimal fetch to ensure existence
+        # Use latest messages afterward
+        thread = store.get_latest_thread(provider, model)  # best-effort
+        if not thread:
+            thread_id = store.create_thread(provider, model, d.name)
+            thread = store.get_latest_thread(provider, model)
+    elif d.cont:
+        thread = store.get_latest_thread(provider, model if d.model else None)
+        if not thread:
+            thread_id = store.create_thread(provider, model, d.name)
+            thread = store.get_latest_thread(provider, model)
+    else:
+        # Default: create a new thread when sending a fresh query
+        thread = store.get_latest_thread(provider, model if d.model else None)
+        if not thread or query:
+            thread_id = store.create_thread(provider, model, d.name)
+            thread = store.get_latest_thread(provider, model)
+
+    if not thread:
+        print("Failed to resolve thread")
+        return
+
+    # Assemble messages
+    history = [
+        {"role": m.role, "content": m.content} for m in store.get_thread_messages(thread.id, limit=50)
+    ]
+    if query:
+        store.add_message(thread.id, "user", query, meta={"directives": directives_dict})
+        history.append({"role": "user", "content": query})
+
+    client = _get_client(provider)
+    resp = client.send(
+        system=system_prompt,
+        messages=history,
+        model=model,
+        temperature=float(d.temp) if d.temp is not None else 0.4,
+        max_tokens=int(d.max) if d.max is not None else None,
+        tools=tools_supported,
+    )
+
+    text = resp.get("text", "")
+    usage = resp.get("usage", {})
+    had_error = resp.get("error", False)
+
+    # Persist assistant response
+    if text:
+        store.add_message(thread.id, "assistant", text, meta={"usage": usage, "tools_dropped": tools_dropped})
+
+    # Minimal user feedback output for Alfred
+    header = f"{provider} {model}"
+    if tools_dropped:
+        header += f" | unsupported tools dropped: {', '.join(tools_dropped)}"
+
+    print(f"{header}\n\n{text if text else 'No response.'}")
+
+    # Logging (meta only unless AIFRED_DEBUG=1)
+    debug = os.getenv("AIFRED_DEBUG") == "1"
+    if debug:
+        log.info(
+            "sent provider=%s model=%s tools=%s usage=%s query=%s",
+            provider,
+            model,
+            tools_supported,
+            usage,
+            query,
+        )
+    else:
+        log.info(
+            "sent provider=%s model=%s tools=%s usage=%s",
+            provider,
+            model,
+            tools_supported,
+            usage,
+        )
+
+
+def main() -> None:
     if len(sys.argv) < 2:
         print("No action specified")
         return
-    
-    action_arg = sys.argv[1]
-    handle_action(action_arg)
+    arg = sys.argv[1]
+    handle_action(arg)
+
 
 if __name__ == "__main__":
     main()
