@@ -1,104 +1,97 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import sys
-from aifred import AifredDB
+from datetime import datetime
+
+from providers.router import route
+from store import Store
+from utils.directives import parse_directives, summarise_directives
+
 
 def alfred_items(items):
-    """Format items for Alfred Script Filter output"""
     return json.dumps({"items": items})
 
-def search_conversations(query):
-    db = AifredDB()
-    
-    # Parse query for filters
-    platform_filter = None
-    favourite_filter = None
-    pinned_filter = None
-    search_query = query
-    
-    # Handle bang filters
-    if "!chatgpt" in query:
-        platform_filter = "chatgpt"
-        search_query = query.replace("!chatgpt", "").strip()
-    elif "!claude" in query:
-        platform_filter = "claude"
-        search_query = query.replace("!claude", "").strip()
-    
-    if "!fav" in query or "!favourite" in query:
-        favourite_filter = True
-        search_query = search_query.replace("!fav", "").replace("!favourite", "").strip()
-    
-    if "!pin" in query or "!pinned" in query:
-        pinned_filter = True
-        search_query = search_query.replace("!pin", "").replace("!pinned", "").strip()
-    
-    results = db.search_conversations(
-        query=search_query,
-        platform=platform_filter,
-        favourite=favourite_filter,
-        pinned=pinned_filter
-    )
-    
+
+def _defaults():
+    provider = os.getenv("AIFRED_PROVIDER_DEFAULT", "openai").lower()
+    model_openai = os.getenv("AIFRED_MODEL_DEFAULT_OPENAI", "gpt-4o")
+    model_anthropic = os.getenv("AIFRED_MODEL_DEFAULT_ANTHROPIC", "claude-3-7-sonnet")
+    return provider, model_openai, model_anthropic
+
+
+def _resolve_provider_model(model_hint, provider_hint):
+    provider_default, model_openai, model_anthropic = _defaults()
+    provider = route(model_hint, provider_hint) if (model_hint or provider_hint) else provider_default
+    if provider == "openai":
+        model = model_hint or model_openai
+    else:
+        model = model_hint or model_anthropic
+    return provider, model
+
+
+def _thread_item(t) -> dict:
+    title = t.name or "(untitled)"
+    subtitle = f"{t.provider} {t.model} • {t.updated_at}"
+    payload = {
+        "query": "",
+        "directives": {"cont": True, "provider": t.provider, "model": t.model, "name": t.name},
+        "thread_hint": {"id": t.id},
+    }
+    return {
+        "uid": f"thread-{t.id}",
+        "title": title,
+        "subtitle": subtitle,
+        "arg": json.dumps(payload),
+    }
+
+
+def build_items(query: str) -> str:
+    store = Store()
+    cleaned, d = parse_directives(query)
+    provider, model = _resolve_provider_model(d.model, d.provider)
+
     items = []
-    
-    # Add import option if no results and query contains 'import'
-    if not results and 'import' in query.lower():
+
+    # When query text exists, show "Send" option first
+    if cleaned:
+        summary = summarise_directives(d)
+        payload = {
+            "query": cleaned,
+            "directives": d.to_dict(),
+            "provider": provider,
+            "model": model,
+            "thread_hint": None,
+        }
         items.append({
-            "uid": "import",
-            "title": "Import Conversations",
-            "subtitle": "Import ChatGPT or Claude conversation exports",
-            "arg": "import",
-            "icon": {"type": "default", "path": "icon.png"}
+            "uid": "send",
+            "title": f"Send to {provider} {model}",
+            "subtitle": summary,
+            "arg": json.dumps(payload),
         })
-    
-    # Add conversation results
-    for row in results[:20]:  # Limit to 20 results
-        conv_id, title, platform, created_at, updated_at, messages, is_favourite, is_pinned = row
-        
-        subtitle = f"{platform.title()} • {updated_at[:10]}"
-        if is_favourite:
-            subtitle += " ⭐"
-        if is_pinned:
-            subtitle += " 📌"
-        
+
+    # List recent threads (limit 5 when query, else 20)
+    limit = 5 if cleaned else 20
+    for t in store.get_recent_threads(limit=limit):
+        items.append(_thread_item(t))
+
+    # Empty state
+    if not items:
         items.append({
-            "uid": conv_id,
-            "title": title,
-            "subtitle": subtitle,
-            "arg": conv_id,
-            "icon": {"type": "default", "path": f"{platform}_icon.png"},
-            "mods": {
-                "alt": {
-                    "subtitle": "Continue this conversation",
-                    "arg": f"continue:{conv_id}"
-                },
-                "cmd": {
-                    "subtitle": "Toggle favourite",
-                    "arg": f"fav:{conv_id}"
-                },
-                "ctrl": {
-                    "subtitle": "Toggle pin",
-                    "arg": f"pin:{conv_id}"
-                }
-            }
+            "uid": "empty",
+            "title": "Type to start a conversation",
+            "subtitle": "Use @directives for model, temp, tools, etc.",
+            "arg": json.dumps({"query": "", "directives": {}, "thread_hint": None}),
         })
-    
-    # Add new conversation option
-    if query and not query.startswith('!'):
-        items.insert(0, {
-            "uid": "new",
-            "title": f"New conversation: {query}",
-            "subtitle": "Start a new AI conversation",
-            "arg": f"new:{query}",
-            "icon": {"type": "default", "path": "new_icon.png"}
-        })
-    
+
     return alfred_items(items)
+
 
 def main():
     query = sys.argv[1] if len(sys.argv) > 1 else ""
-    print(search_conversations(query))
+    print(build_items(query))
+
 
 if __name__ == "__main__":
     main()
