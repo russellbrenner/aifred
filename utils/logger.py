@@ -10,6 +10,12 @@ def _log_path() -> Path:
     p = os.getenv("AIFRED_LOG_PATH")
     if p:
         return Path(p)
+    # Prefer Alfred workflow data directory if available
+    data_dir = os.getenv("alfred_workflow_data")
+    if data_dir:
+        d = Path(data_dir)
+        d.mkdir(parents=True, exist_ok=True)
+        return d / "aifred.log"
     return Path("aifred.log")
 
 
@@ -34,4 +40,3 @@ def get_logger() -> logging.Logger:
         logger.addHandler(stream)
     _LOGGER = logger
     return logger
-

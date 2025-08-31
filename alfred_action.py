@@ -11,15 +11,11 @@ from providers.anthropic_client import AnthropicClient
 from providers.openai_client import OpenAIClient
 from providers.router import route, validate_tools
 from store import Store
+from utils.budget import trim_history
+from utils.config import get_defaults
 from utils.directives import Directives, parse_directives
 from utils.logger import get_logger
-
-
-def _defaults():
-    provider = os.getenv("AIFRED_PROVIDER_DEFAULT", "openai").lower()
-    model_openai = os.getenv("AIFRED_MODEL_DEFAULT_OPENAI", "gpt-4o")
-    model_anthropic = os.getenv("AIFRED_MODEL_DEFAULT_ANTHROPIC", "claude-3-7-sonnet")
-    return provider, model_openai, model_anthropic
+from utils.notify import notify
 
 
 def _load_system_prompt(directives_sys: str | None) -> str:
@@ -40,7 +36,12 @@ def _get_client(provider: str):
 
 
 def _resolve_provider_model(d: Directives) -> tuple[str, str]:
-    provider_default, model_openai, model_anthropic = _defaults()
+    defaults = get_defaults()
+    provider_default, model_openai, model_anthropic = (
+        defaults.provider,
+        defaults.model_openai,
+        defaults.model_anthropic,
+    )
     provider = route(d.model, d.provider) if (d.model or d.provider) else provider_default
     model = d.model or (model_openai if provider == "openai" else model_anthropic)
     return provider, model
@@ -120,9 +121,18 @@ def handle_action(arg: str) -> None:
         history.append({"role": "user", "content": query})
 
     client = _get_client(provider)
+    # Token budgeting / history trimming (approximate)
+    defaults = get_defaults()
+    trimmed_history, _est = trim_history(
+        history,
+        system=_load_system_prompt(None) if not d.sys else d.sys,
+        max_input_tokens=defaults.max_input_tokens,
+        reserve_for_completion=int(d.max) if d.max else 400,
+    )
+
     resp = client.send(
         system=system_prompt,
-        messages=history,
+        messages=trimmed_history,
         model=model,
         temperature=float(d.temp) if d.temp is not None else 0.4,
         max_tokens=int(d.max) if d.max is not None else None,
@@ -142,7 +152,9 @@ def handle_action(arg: str) -> None:
     if tools_dropped:
         header += f" | unsupported tools dropped: {', '.join(tools_dropped)}"
 
-    print(f"{header}\n\n{text if text else 'No response.'}")
+    output_text = text if text else "No response."
+    print(f"{header}\n\n{output_text}")
+    notify(f"Sent to {provider} {model}", output_text[:120])
 
     # Logging (meta only unless AIFRED_DEBUG=1)
     debug = os.getenv("AIFRED_DEBUG") == "1"

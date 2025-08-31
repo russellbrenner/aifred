@@ -6,6 +6,7 @@ import sys
 from datetime import datetime
 
 from providers.router import route
+from utils.config import get_defaults
 from store import Store
 from utils.directives import parse_directives, summarise_directives
 
@@ -14,15 +15,13 @@ def alfred_items(items):
     return json.dumps({"items": items})
 
 
-def _defaults():
-    provider = os.getenv("AIFRED_PROVIDER_DEFAULT", "openai").lower()
-    model_openai = os.getenv("AIFRED_MODEL_DEFAULT_OPENAI", "gpt-4o")
-    model_anthropic = os.getenv("AIFRED_MODEL_DEFAULT_ANTHROPIC", "claude-3-7-sonnet")
-    return provider, model_openai, model_anthropic
-
-
 def _resolve_provider_model(model_hint, provider_hint):
-    provider_default, model_openai, model_anthropic = _defaults()
+    defaults = get_defaults()
+    provider_default, model_openai, model_anthropic = (
+        defaults.provider,
+        defaults.model_openai,
+        defaults.model_anthropic,
+    )
     provider = route(model_hint, provider_hint) if (model_hint or provider_hint) else provider_default
     if provider == "openai":
         model = model_hint or model_openai
