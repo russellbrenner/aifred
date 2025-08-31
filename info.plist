@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>com.rbrenner.aifred</string>
+	<key>category</key>
+	<string>Internet</string>
+	<key>connections</key>
+	<dict/>
+	<key>createdby</key>
+	<string>Russell Brenner</string>
+	<key>description</key>
+	<string>AI conversation manager with history import and search</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>Aifred</string>
+	<key>objects</key>
+	<array/>
+	<key>readme</key>
+	<string>Aifred - AI Conversation Manager for Alfred
+
+Features:
+- Import ChatGPT/Claude conversation history
+- Search and filter past conversations
+- Continue conversations with context
+- Multi-platform AI support</string>
+	<key>uidata</key>
+	<dict/>
+	<key>version</key>
+	<string>1.0.0</string>
+	<key>webaddress</key>
+	<string>https://github.com/russellbrenner/aifred</string>
+</dict>
+</plist>
