@@ -23,12 +23,14 @@ def main():
     
     print("\n🎉 Aifred setup complete!")
     print("\nNext steps:")
-    print("1. Set your API keys in Alfred workflow variables:")
-    print("   - OPENAI_API_KEY (for ChatGPT)")
-    print("   - CLAUDE_API_KEY (for Claude)")
-    print("2. Export your conversation data from ChatGPT/Claude")
-    print("3. Use 'ai import' to import your conversations")
-    print("4. Start searching with 'ai <query>'")
+    print("1) In Alfred → Workflows → Aifred → [i], set environment variables:")
+    print("   - OPENAI_API_KEY (required for OpenAI)")
+    print("   - ANTHROPIC_API_KEY (required for Anthropic)")
+    print("   - Optional: AIFRED_PROVIDER_DEFAULT, AIFRED_MODEL_DEFAULT_OPENAI, AIFRED_MODEL_DEFAULT_ANTHROPIC")
+    print("   - Optional: AIFRED_SYSTEM_PROMPT_PATH, AIFRED_DB_PATH, AIFRED_DRY_RUN=1")
+    print("2) In Alfred, add a Script Filter node running: /usr/bin/python3 \"$PWD/alfred_filter.py\" \"{query}\"")
+    print("3) Connect it to a Run Script node running: /usr/bin/python3 \"$PWD/alfred_action.py\" \"{query}\"")
+    print("4) Type 'ai Hello @gpt-4o' in Alfred to send a message.")
 
 if __name__ == "__main__":
     main()
