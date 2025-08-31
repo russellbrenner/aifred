@@ -54,6 +54,7 @@ python3 setup.py
 - `ANTHROPIC_API_KEY`
 - Optional defaults: `AIFRED_PROVIDER_DEFAULT=openai`, `AIFRED_MODEL_DEFAULT_OPENAI=gpt-4o`, `AIFRED_MODEL_DEFAULT_ANTHROPIC=claude-3-7-sonnet`
 - Optional extras: `AIFRED_SYSTEM_PROMPT_PATH`, `AIFRED_DB_PATH`, `AIFRED_DRY_RUN=1`, `AIFRED_COPY_CLIPBOARD=1`
+  Additional controls: `AIFRED_MAX_INPUT_TOKENS=4000`, `AIFRED_NOTIFY=1`
 
 3) Configure nodes in Alfred (see below) and start typing `ai`.
 
@@ -83,6 +84,8 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `AIFRED_DB_PATH` (optional; else Alfred data dir or `./aifred.db`)
 - `AIFRED_DRY_RUN=1` (stub responses for local tests)
 - `AIFRED_COPY_CLIPBOARD=1` (copy assistant replies to clipboard)
+- `AIFRED_MAX_INPUT_TOKENS` (approximate cap for input history; default 4000)
+- `AIFRED_NOTIFY=1` (show macOS notifications on send)
 
 ## Usage
 
@@ -115,6 +118,7 @@ Continue @cont and refine the migration plan @temp:0.2
 ## Provider Notes & Tools
 - Routing: Model hint and/or `@provider` select OpenAI or Anthropic; otherwise defaults.
 - Tools: Requested tools are validated per provider capability. Unsupported tools are dropped and noted in the reply header.
+- Context: History is trimmed approximately to fit under `AIFRED_MAX_INPUT_TOKENS` (oldest first), while reserving part of the budget for completions.
 
 ## Testing
 Run all tests:
