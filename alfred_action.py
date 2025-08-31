@@ -62,6 +62,7 @@ def _payload_from_arg(arg: str) -> Dict:
 def handle_action(arg: str) -> None:
     log = get_logger()
     store = Store()
+    defaults = get_defaults()
 
     payload = _payload_from_arg(arg)
     if "error" in payload:
@@ -87,26 +88,26 @@ def handle_action(arg: str) -> None:
     thread_hint = payload.get("thread_hint")
     thread = None
     if d.new:
-        thread_id = store.create_thread(provider, model, d.name)
-        thread = store.get_latest_thread(provider, model)
+        thread_id = store.create_thread(provider, model, d.name, profile=defaults.profile)
+        thread = store.get_latest_thread(provider, model, profile=defaults.profile)
     elif thread_hint and isinstance(thread_hint, dict) and thread_hint.get("id"):
         # Minimal fetch to ensure existence
         # Use latest messages afterward
-        thread = store.get_latest_thread(provider, model)  # best-effort
+        thread = store.get_latest_thread(provider, model, profile=defaults.profile)  # best-effort
         if not thread:
-            thread_id = store.create_thread(provider, model, d.name)
-            thread = store.get_latest_thread(provider, model)
+            thread_id = store.create_thread(provider, model, d.name, profile=defaults.profile)
+            thread = store.get_latest_thread(provider, model, profile=defaults.profile)
     elif d.cont:
-        thread = store.get_latest_thread(provider, model if d.model else None)
+        thread = store.get_latest_thread(provider, model if d.model else None, profile=defaults.profile)
         if not thread:
-            thread_id = store.create_thread(provider, model, d.name)
-            thread = store.get_latest_thread(provider, model)
+            thread_id = store.create_thread(provider, model, d.name, profile=defaults.profile)
+            thread = store.get_latest_thread(provider, model, profile=defaults.profile)
     else:
         # Default: create a new thread when sending a fresh query
-        thread = store.get_latest_thread(provider, model if d.model else None)
+        thread = store.get_latest_thread(provider, model if d.model else None, profile=defaults.profile)
         if not thread or query:
-            thread_id = store.create_thread(provider, model, d.name)
-            thread = store.get_latest_thread(provider, model)
+            thread_id = store.create_thread(provider, model, d.name, profile=defaults.profile)
+            thread = store.get_latest_thread(provider, model, profile=defaults.profile)
 
     if not thread:
         print("Failed to resolve thread")
@@ -142,6 +143,30 @@ def handle_action(arg: str) -> None:
     text = resp.get("text", "")
     usage = resp.get("usage", {})
     had_error = resp.get("error", False)
+    tool_calls = resp.get("tool_calls", [])
+
+    # Tool execution loop (single pass)
+    if os.getenv("AIFRED_TOOL_EXEC") == "1" and tool_calls:
+        from utils.tool_runtime import execute_tool_call
+        for call in tool_calls:
+            name = call.get("name")
+            arguments = call.get("arguments", {})
+            result = execute_tool_call(name, arguments)
+            # Persist tool message and extend history
+            store.add_message(thread.id, "tool", json.dumps({"name": name, "result": result}), meta=None)
+            trimmed_history.append({"role": "tool", "content": json.dumps({"name": name, "result": result})})
+        # Re-send to provider once with tool results
+        resp2 = client.send(
+            system=system_prompt,
+            messages=trimmed_history,
+            model=model,
+            temperature=float(d.temp) if d.temp is not None else 0.4,
+            max_tokens=int(d.max) if d.max is not None else None,
+            tools=tools_supported,
+        )
+        text = resp2.get("text", text)
+        usage = resp2.get("usage", usage)
+        had_error = had_error or resp2.get("error", False)
 
     # Persist assistant response
     if text:

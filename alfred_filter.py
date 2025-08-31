@@ -48,6 +48,7 @@ def _thread_item(t) -> dict:
 
 def build_items(query: str) -> str:
     store = Store()
+    defaults = get_defaults()
     cleaned, d = parse_directives(query)
     provider, model = _resolve_provider_model(d.model, d.provider)
 
@@ -72,7 +73,7 @@ def build_items(query: str) -> str:
 
     # List recent threads (limit 5 when query, else 20)
     limit = 5 if cleaned else 20
-    for t in store.get_recent_threads(limit=limit):
+    for t in store.get_recent_threads(limit=limit, profile=defaults.profile):
         items.append(_thread_item(t))
 
     # Empty state

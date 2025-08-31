@@ -81,9 +81,12 @@ class AnthropicClient:
     ) -> Dict:
         payload = self._build_payload(system, messages, model, temperature, max_tokens, tools)
         if self.dry_run:
+            tool_calls = []
+            if tools:
+                tool_calls = [{"name": tools[0], "arguments": {"query": "test"}}]
             return {
                 "text": f"[dry-run anthropic:{model}] {messages[-1]['content']}",
-                "tool_calls": [],
+                "tool_calls": tool_calls,
                 "usage": {"input_tokens": 0, "output_tokens": 0},
             }
 

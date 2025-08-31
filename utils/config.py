@@ -11,6 +11,7 @@ class Defaults:
     model_openai: str
     model_anthropic: str
     max_input_tokens: int
+    profile: str
 
 
 def get_defaults() -> Defaults:
@@ -19,7 +20,8 @@ def get_defaults() -> Defaults:
     model_anthropic = os.getenv("AIFRED_MODEL_DEFAULT_ANTHROPIC", "claude-3-7-sonnet")
     # Rough input token cap for history (independent of output max)
     max_input_tokens = int(os.getenv("AIFRED_MAX_INPUT_TOKENS", "4000"))
-    return Defaults(provider, model_openai, model_anthropic, max_input_tokens)
+    profile = os.getenv("AIFRED_PROFILE", "default")
+    return Defaults(provider, model_openai, model_anthropic, max_input_tokens, profile)
 
 
 def get_bool(name: str, default: bool = False) -> bool:
@@ -27,4 +29,3 @@ def get_bool(name: str, default: bool = False) -> bool:
     if val is None:
         return default
     return val.strip() in {"1", "true", "TRUE", "yes", "on"}
-

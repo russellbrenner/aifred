@@ -69,6 +69,7 @@ class Store:
                 """
                 CREATE TABLE IF NOT EXISTS threads (
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  profile TEXT NOT NULL DEFAULT 'default',
                   provider TEXT NOT NULL,
                   model TEXT NOT NULL,
                   name TEXT,
@@ -93,15 +94,23 @@ class Store:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id)"
             )
+            # Migration: add profile column to existing threads if missing
+            try:
+                cur = conn.execute("PRAGMA table_info(threads)")
+                cols = [r[1] for r in cur.fetchall()]
+                if "profile" not in cols:
+                    conn.execute("ALTER TABLE threads ADD COLUMN profile TEXT NOT NULL DEFAULT 'default'")
+            except Exception:
+                pass
             conn.commit()
 
     # Thread API
-    def create_thread(self, provider: str, model: str, name: Optional[str]) -> int:
+    def create_thread(self, provider: str, model: str, name: Optional[str], profile: str = "default") -> int:
         now = utcnow_iso()
         with self._conn() as conn:
             cur = conn.execute(
-                "INSERT INTO threads(provider, model, name, created_at, updated_at) VALUES (?,?,?,?,?)",
-                (provider, model, name, now, now),
+                "INSERT INTO threads(profile, provider, model, name, created_at, updated_at) VALUES (?,?,?,?,?,?)",
+                (profile, provider, model, name, now, now),
             )
             conn.commit()
             return int(cur.lastrowid)
@@ -122,11 +131,11 @@ class Store:
             )
             conn.commit()
 
-    def get_recent_threads(self, limit: int = 20) -> List[Thread]:
+    def get_recent_threads(self, limit: int = 20, profile: str = "default") -> List[Thread]:
         with self._conn() as conn:
             cur = conn.execute(
-                "SELECT id, provider, model, name, created_at, updated_at FROM threads ORDER BY updated_at DESC LIMIT ?",
-                (limit,),
+                "SELECT id, provider, model, name, created_at, updated_at FROM threads WHERE profile = ? ORDER BY updated_at DESC LIMIT ?",
+                (profile, limit),
             )
             rows = cur.fetchall()
         return [Thread(*row) for row in rows]
@@ -140,17 +149,17 @@ class Store:
             row = cur.fetchone()
         return Thread(*row) if row else None
 
-    def get_latest_thread(self, provider: str, model: Optional[str] = None) -> Optional[Thread]:
+    def get_latest_thread(self, provider: str, model: Optional[str] = None, profile: str = "default") -> Optional[Thread]:
         with self._conn() as conn:
             if model:
                 cur = conn.execute(
-                    "SELECT id, provider, model, name, created_at, updated_at FROM threads WHERE provider = ? AND model = ? ORDER BY updated_at DESC LIMIT 1",
-                    (provider, model),
+                    "SELECT id, provider, model, name, created_at, updated_at FROM threads WHERE profile = ? AND provider = ? AND model = ? ORDER BY updated_at DESC LIMIT 1",
+                    (profile, provider, model),
                 )
             else:
                 cur = conn.execute(
-                    "SELECT id, provider, model, name, created_at, updated_at FROM threads WHERE provider = ? ORDER BY updated_at DESC LIMIT 1",
-                    (provider,),
+                    "SELECT id, provider, model, name, created_at, updated_at FROM threads WHERE profile = ? AND provider = ? ORDER BY updated_at DESC LIMIT 1",
+                    (profile, provider),
                 )
             row = cur.fetchone()
         return Thread(*row) if row else None
