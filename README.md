@@ -86,6 +86,8 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `AIFRED_COPY_CLIPBOARD=1` (copy assistant replies to clipboard)
 - `AIFRED_MAX_INPUT_TOKENS` (approximate cap for input history; default 4000)
 - `AIFRED_NOTIFY=1` (show macOS notifications on send)
+- `AIFRED_TOOL_EXEC=1` (execute tool_calls once and re-send)
+- `AIFRED_PROFILE` (logical profile name; default `default`)
 
 ## Usage
 
@@ -102,6 +104,7 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `@new` → force a new thread
 - `@cont` → continue most recent (provider/model if specified)
 - `@tools:browse,code,python` → request tools (provider-validated)
+  - With `AIFRED_TOOL_EXEC=1`, supported tool calls execute once and are included in a follow-up response.
 
 ### Examples
 ```
@@ -119,7 +122,7 @@ Continue @cont and refine the migration plan @temp:0.2
 - Routing: Model hint and/or `@provider` select OpenAI or Anthropic; otherwise defaults.
 - Tools: Requested tools are validated per provider capability. Unsupported tools are dropped and noted in the reply header.
 - Context: History is trimmed approximately to fit under `AIFRED_MAX_INPUT_TOKENS` (oldest first), while reserving part of the budget for completions.
- - Tool schemas are included in requests (OpenAI function tools; Anthropic tool definitions), but actual tool execution is not performed yet. Tool calls are surfaced in metadata and will be executed in a later pass.
+- Tool schemas are included in requests (OpenAI function tools; Anthropic tool definitions). If `AIFRED_TOOL_EXEC=1`, basic tool execution is performed (e.g., `web_search` via DuckDuckGo HTML); results are appended as tool messages and a second model call is made.
 
 ## Testing
 Run all tests:
@@ -139,6 +142,21 @@ python3 alfred_action.py '{"query":"hello @gpt-4o","directives":{}}'
 - Unsupported tools → Dropped with a short header note.
 - Python path issues → Verify `/usr/bin/python3` or adjust node scripts accordingly.
 - No output in Alfred → Run the Script Filter and Action scripts in Terminal to inspect errors.
+- Settings changes not applied → Ensure you're using the Settings Script or restart Alfred after editing env vars.
+
+## Settings (Optional UI)
+Add a second workflow for settings:
+- Script Filter with keyword `ai-settings` running `/usr/bin/python3 "$PWD/alfred_settings.py" "{query}"`.
+- Connected Run Script executing `/usr/bin/python3 "$PWD/alfred_settings.py" "{query}"`.
+
+This shows toggles for notifications, clipboard copy, current profile, and max input tokens. Settings persist to a local config file in the Alfred data directory and are merged with environment variables.
+
+## Packaging
+Build a distributable `.alfredworkflow`:
+```bash
+python3 build_workflow.py
+open dist/aifred.alfredworkflow
+```
 
 ## Privacy & Security
 - Local Storage: All conversation data stored locally in Alfred-approved directories.
@@ -151,6 +169,7 @@ aifred/
 ├── aifred.py             # Legacy import/search + redact utility
 ├── alfred_filter.py      # Alfred Script Filter (list threads, prepare send payload)
 ├── alfred_action.py      # Action: resolve thread, call provider, persist
+├── alfred_settings.py    # Script Filter for settings UI (optional)
 ├── providers/
 │   ├── router.py         # Provider routing + capability map
 │   ├── openai_client.py  # OpenAI client (normalised)
@@ -158,6 +177,11 @@ aifred/
 ├── utils/
 │   ├── directives.py     # @directive parser + summary
 │   └── logger.py         # Minimal rotating logger
+│   ├── budget.py         # Token estimation and trimming
+│   ├── config.py         # Unified defaults and overrides
+│   ├── notify.py         # macOS notifications
+│   ├── tools.py          # Tool schemas
+│   └── user_config.py    # Settings persisted in Alfred data dir
 ├── store.py              # SQLite layer (threads/messages)
 ├── tests/                # Unit tests (parser/router/store/action)
 ├── docs/architecture.md  # Data flow and mapping tables
@@ -165,6 +189,7 @@ aifred/
 ├── info.plist            # Alfred workflow configuration (packaging)
 ├── requirements.txt      # Python dependencies
 └── setup.py              # Installation script
+└── build_workflow.py     # Package .alfredworkflow
 ```
 
 See [AGENTS.md](AGENTS.md) for the iterative development plan and adherence to Alfred community standards. For deeper architectural notes, read [docs/architecture.md](docs/architecture.md).
