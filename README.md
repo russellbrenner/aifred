@@ -1,6 +1,6 @@
 # Aifred
 
-> AI conversation manager for Alfred that imports your ChatGPT/Claude history and lets you search and continue conversations.
+AI conversation manager for Alfred that lets you initiate and continue chats with OpenAI and Anthropic models, select models and temperature via lightweight @directives, and keep your history locally.
 
 [![Alfred Gallery](https://img.shields.io/badge/Alfred-Gallery-blue)](https://alfred.app)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-green)](https://python.org)
@@ -8,12 +8,12 @@
 
 ## Features
 
-- 🔍 **Import & Search**: Import ChatGPT/Claude conversation exports with full-text search
-- 💬 **Continue Conversations**: Load conversation context and continue where you left off
-- 🏷️ **Smart Filtering**: Bang syntax (`!chatgpt`, `!claude`, `!fav`, `!pin`) for precise searches
-- ⭐ **Conversation Management**: Favourite and pin important conversations
-- 🔄 **Multi-Platform**: Support for ChatGPT and Claude with extensible architecture
-- 🔐 **Privacy First**: All data stored locally in Alfred-approved directories
+- 💬 Dual providers: OpenAI + Anthropic via a common interface
+- ⚙️ Inline controls: `@gpt-4o @temp:0.6 @max:800 @tools:browse,code`
+- 🧵 Threads: Persist and resume per provider/model with names
+- 🧭 Alfred UX: Script Filter to send/continue + notifications via output
+- 🛠️ Tool hints: Provider-native tool-use where supported; graceful fallback
+- 🔐 Privacy-first: Local SQLite; API keys via Alfred env vars
 
 ## Installation
 
@@ -28,54 +28,42 @@
 3. Run the setup: `python3 setup.py`
 
 ### Configuration
-Set your API keys in Alfred Workflow Environment Variables:
-- `OPENAI_API_KEY` - For ChatGPT integration
-- `CLAUDE_API_KEY` - For Claude integration (optional)
+Set your keys and defaults in Alfred Workflow Environment Variables:
+- `OPENAI_API_KEY` (required for OpenAI)
+- `ANTHROPIC_API_KEY` (required for Anthropic)
+- `AIFRED_PROVIDER_DEFAULT` = `openai` | `anthropic` (default: `openai`)
+- `AIFRED_MODEL_DEFAULT_OPENAI` (default: `gpt-4o`)
+- `AIFRED_MODEL_DEFAULT_ANTHROPIC` (default: `claude-3-7-sonnet`)
+- `AIFRED_SYSTEM_PROMPT_PATH` (optional system prompt file)
+- `AIFRED_DB_PATH` (optional; else Alfred data dir or `./aifred.db`)
+- `AIFRED_DRY_RUN=1` (optional; stub responses for local tests)
 
 ## Usage
 
-### Basic Commands
-- `ai` - Show recent conversations and import options
-- `ai <query>` - Search conversations or start new chat
-- `ai import` - Access import functionality
+### Alfred
+- `ai` → List recent threads.
+- `ai <message with @directives>` → Top result “Send to {provider model}” plus recent threads.
 
-### Search Syntax
-- `ai machine learning` - Find conversations about machine learning
-- `ai !chatgpt python` - Search only ChatGPT conversations for "python"
-- `ai !claude !fav` - Show favourite Claude conversations
-- `ai !pin` - Show all pinned conversations
+### Directive cheatsheet
+- `@gpt-4o`, `@o4-mini`, `@claude-3-7-sonnet` → model
+- `@temp:0.7` → temperature
+- `@max:1000` → max tokens (mapped per provider)
+- `@sys:"You are helpful"` → system prompt override
+- `@name:research` → name thread
+- `@new` → force a new thread
+- `@cont` → continue most recent (provider/model if specified)
+- `@tools:browse,code,python` → request tools (provider-validated)
 
-### Keyboard Shortcuts
-- `Enter` - Open/view conversation
-- `⌥ + Enter` - Continue conversation with AI
-- `⌘ + Enter` - Toggle favourite status
-- `⌃ + Enter` - Toggle pin status
+## Data Import (optional)
 
-## Data Import
-
-### ChatGPT Export
-1. Visit [ChatGPT Settings](https://chatgpt.com/settings) → Data controls → Export data
-2. Download your `conversations.json` file
-3. Use `ai import chatgpt /path/to/conversations.json`
-4. Wait for import completion message
-
-### Claude Export
-1. Visit Claude Settings → Export your data
-2. Download the export file
-3. Use `ai import claude /path/to/claude-export.json`
-4. Conversations will be available immediately
-
-### Supported Formats
-- **ChatGPT**: Standard JSON export with conversation mapping
-- **Claude**: JSON export with chat messages array
-- **Future**: Support planned for additional AI platforms
+Legacy import of ChatGPT/Claude exports is still available via `aifred.py` for search-only workflows. The new threaded chat features use their own SQLite tables and don’t require imports.
 
 ## Requirements
 
 ### System Requirements
 - macOS 10.15 or later
 - Alfred 4+ with Powerpack license
-- Python 3.8 or later
+- Python 3.8+ (dev target 3.12)
 
 ### Dependencies
 - `requests` >= 2.31.0 (for API integration)
@@ -85,10 +73,10 @@ All dependencies are automatically installed by the setup script.
 
 ## Privacy & Security
 
-- **Local Storage**: All conversation data stored locally in Alfred-approved directories
-- **API Keys**: Securely stored in Alfred environment variables
-- **No Tracking**: No data collection or external analytics
-- **Open Source**: Full source code available for audit
+- Local Storage: All conversation data stored locally in Alfred-approved directories
+- API Keys: Securely stored in Alfred environment variables
+- No Tracking: No data collection or external analytics
+- Open Source: Full source code available for audit
 
 ## Contributing
 
@@ -101,48 +89,53 @@ cd aifred
 python3 setup.py
 ```
 
-See [AGENTS.md](AGENTS.md) for development workflow and AI agent usage patterns.
+See [AGENTS.md](AGENTS.md) for development workflow and AI agent usage patterns. For deeper details, read [docs/architecture.md](docs/architecture.md).
 
 ## Development
 
 ### Project Structure
 ```
 aifred/
-├── src/
-│   ├── aifred.py          # Core database and import functionality
-│   ├── alfred_filter.py   # Search interface for Alfred
-│   └── alfred_action.py   # Action handlers and AI integration
+├── aifred.py             # Legacy import/search commands
+├── alfred_filter.py      # Alfred Script Filter (list threads, prepare send payload)
+├── alfred_action.py      # Action: resolve thread, call provider, persist
+├── providers/
+│   ├── router.py         # Provider routing + capability map
+│   ├── openai_client.py  # OpenAI client (normalised)
+│   └── anthropic_client.py # Anthropic client (normalised)
+├── utils/
+│   ├── directives.py     # @directive parser + summary
+│   └── logger.py         # Minimal rotating logger
+├── store.py              # SQLite layer (threads/messages)
+├── docs/                 # Additional documentation
 ├── assets/               # Icons and visual assets
-├── docs/                # Additional documentation
-├── info.plist          # Alfred workflow configuration
-├── requirements.txt    # Python dependencies
-└── setup.py           # Installation script
+├── info.plist            # Alfred workflow configuration
+├── requirements.txt      # Python dependencies
+└── setup.py              # Installation script
 ```
 
 ### Testing
 ```bash
-# Test core functionality
-python3 aifred.py search "test query"
+# Unit tests
+python3 -m unittest -v
 
-# Test Alfred integration
-python3 alfred_filter.py "test query"
-
-# Test actions
-python3 alfred_action.py "test_action"
+# Dry-run provider calls (no external API requests)
+export AIFRED_DRY_RUN=1
+python3 alfred_action.py '{"query":"hello @gpt-4o","directives":{}}'
 ```
 
 ## Support
 
 ### Getting Help
-- 📖 **Documentation**: Check `README.md` and `AGENTS.md`
-- 🐛 **Bug Reports**: [Create an issue](https://github.com/username/aifred/issues)
-- 💬 **Questions**: [Alfred Forum](https://www.alfredforum.com/)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/username/aifred/discussions)
+- Documentation: Check `README.md` and `AGENTS.md`
+- Bug Reports: Create an issue on GitHub
+- Questions: Alfred Forum
+- Feature Requests: GitHub Discussions
 
 ### Common Issues
-- **Import Fails**: Ensure export file is valid JSON and path is correct
-- **API Errors**: Verify API keys are correctly set in workflow environment
-- **Search Issues**: Check database was created successfully in Alfred data directory
+- API key errors → Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in Alfred env vars.
+- Unknown model → Falls back to defaults; a note prints in output.
+- Unsupported tools → Silently dropped with a short header note.
 
 ## License
 
