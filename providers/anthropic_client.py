@@ -26,7 +26,7 @@ class AnthropicClient:
             "error": True,
         }
 
-    def send(
+    def _build_payload(
         self,
         system: str,
         messages: List[Dict],
@@ -35,16 +35,6 @@ class AnthropicClient:
         max_tokens: Optional[int],
         tools: List[str],
     ) -> Dict:
-        if self.dry_run:
-            return {
-                "text": f"[dry-run anthropic:{model}] {messages[-1]['content']}",
-                "tool_calls": [],
-                "usage": {"input_tokens": 0, "output_tokens": 0},
-            }
-
-        if not self.api_key:
-            return self._missing_key_error()
-
         anthropic_messages: List[Dict] = []
         # Anthropic supports a system string separate from messages
         for m in messages:
@@ -68,6 +58,38 @@ class AnthropicClient:
         if system:
             payload["system"] = system
 
+        # Tool schemas (placeholders, not executed here)
+        if tools:
+            try:
+                from utils.tools import anthropic_tool_defs
+                tool_defs = anthropic_tool_defs(tools)
+                if tool_defs:
+                    payload["tools"] = tool_defs
+                    payload["tool_choice"] = "auto"
+            except Exception:
+                pass
+        return payload
+
+    def send(
+        self,
+        system: str,
+        messages: List[Dict],
+        model: str,
+        temperature: float,
+        max_tokens: Optional[int],
+        tools: List[str],
+    ) -> Dict:
+        payload = self._build_payload(system, messages, model, temperature, max_tokens, tools)
+        if self.dry_run:
+            return {
+                "text": f"[dry-run anthropic:{model}] {messages[-1]['content']}",
+                "tool_calls": [],
+                "usage": {"input_tokens": 0, "output_tokens": 0},
+            }
+
+        if not self.api_key:
+            return self._missing_key_error()
+
         headers = {
             "x-api-key": self.api_key,
             "content-type": "application/json",
@@ -85,9 +107,21 @@ class AnthropicClient:
             resp.raise_for_status()
             data = resp.json()
             content = data.get("content", [])
-            text = "".join([c.get("text", "") for c in content if c.get("type") in {None, "text"}])
+            text_parts = []
+            tool_calls = []
+            for c in content:
+                ctype = c.get("type")
+                if ctype in {None, "text"}:
+                    text_parts.append(c.get("text", ""))
+                elif ctype == "tool_use":
+                    # Normalise tool calls without execution
+                    tool_calls.append({
+                        "name": c.get("name"),
+                        "arguments": c.get("input", {}),
+                    })
+            text = "".join(text_parts)
             usage = data.get("usage", {})
-            return {"text": text, "tool_calls": [], "usage": usage}
+            return {"text": text, "tool_calls": tool_calls, "usage": usage}
         except Exception as e:
             return {
                 "text": f"Error contacting Anthropic: {e}",
