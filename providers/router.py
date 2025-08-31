@@ -38,8 +38,14 @@ def route(model_hint: Optional[str], provider_hint: Optional[str]) -> str:
 
 
 PROVIDER_CAPS: Dict[str, ProviderCapability] = {
-    "openai": {"tool_use": True, "tool_names": {"browse", "code", "python"}},
-    "anthropic": {"tool_use": True, "tool_names": {"browse", "code"}},
+    "openai": {
+        "tool_use": True,
+        "tool_names": {"browse", "code", "python", "fetch_url", "citation_extract", "case_search"},
+    },
+    "anthropic": {
+        "tool_use": True,
+        "tool_names": {"browse", "code", "fetch_url", "citation_extract", "case_search"},
+    },
 }
 
 
@@ -55,4 +61,3 @@ def validate_tools(provider: str, requested: List[str]) -> Tuple[List[str], List
     supported = [t for t in requested if t in allowed]
     dropped = [t for t in requested if t not in allowed]
     return supported, dropped
-

@@ -51,6 +51,51 @@ def openai_tool_defs(tool_names: List[str]) -> List[Dict]:
                     },
                 }
             )
+        elif t == "fetch_url":
+            defs.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "fetch_url",
+                        "description": "Fetch and extract readable text from a URL (best-effort).",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"url": {"type": "string"}},
+                            "required": ["url"],
+                        },
+                    },
+                }
+            )
+        elif t == "citation_extract":
+            defs.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "citation_extract",
+                        "description": "Extract legal citations (cases, statutes) from text.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"text": {"type": "string"}},
+                            "required": ["text"],
+                        },
+                    },
+                }
+            )
+        elif t == "case_search":
+            defs.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "case_search",
+                        "description": "Search case law by keyword (CourtListener API).",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"query": {"type": "string"}},
+                            "required": ["query"],
+                        },
+                    },
+                }
+            )
     return defs
 
 
@@ -93,5 +138,40 @@ def anthropic_tool_defs(tool_names: List[str]) -> List[Dict]:
                     },
                 }
             )
+        elif t == "fetch_url":
+            defs.append(
+                {
+                    "name": "fetch_url",
+                    "description": "Fetch and extract readable text from a URL (best-effort).",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {"url": {"type": "string"}},
+                        "required": ["url"],
+                    },
+                }
+            )
+        elif t == "citation_extract":
+            defs.append(
+                {
+                    "name": "citation_extract",
+                    "description": "Extract legal citations (cases, statutes) from text.",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {"text": {"type": "string"}},
+                        "required": ["text"],
+                    },
+                }
+            )
+        elif t == "case_search":
+            defs.append(
+                {
+                    "name": "case_search",
+                    "description": "Search case law by keyword (CourtListener API).",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {"query": {"type": "string"}},
+                        "required": ["query"],
+                    },
+                }
+            )
     return defs
-
