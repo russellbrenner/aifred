@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 from typing import Dict, List, Optional
 
-import requests
-
 
 class OpenAIClient:
     """Minimal OpenAI client that normalises responses.
@@ -70,6 +68,7 @@ class OpenAIClient:
         }
 
         try:
+            import requests  # lazy import to allow dry-run without dependency
             resp = requests.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers=headers,
@@ -88,4 +87,3 @@ class OpenAIClient:
                 "usage": {},
                 "error": True,
             }
-

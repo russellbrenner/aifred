@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 from typing import Dict, List, Optional
 
-import requests
-
 
 class AnthropicClient:
     """Minimal Anthropic client that normalises responses.
@@ -77,6 +75,7 @@ class AnthropicClient:
         }
 
         try:
+            import requests  # lazy import to allow dry-run without dependency
             resp = requests.post(
                 "https://api.anthropic.com/v1/messages",
                 headers=headers,
@@ -96,4 +95,3 @@ class AnthropicClient:
                 "usage": {},
                 "error": True,
             }
-
