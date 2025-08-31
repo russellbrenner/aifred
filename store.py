@@ -131,6 +131,15 @@ class Store:
             rows = cur.fetchall()
         return [Thread(*row) for row in rows]
 
+    def get_thread(self, thread_id: int) -> Optional[Thread]:
+        with self._conn() as conn:
+            cur = conn.execute(
+                "SELECT id, provider, model, name, created_at, updated_at FROM threads WHERE id = ?",
+                (thread_id,),
+            )
+            row = cur.fetchone()
+        return Thread(*row) if row else None
+
     def get_latest_thread(self, provider: str, model: Optional[str] = None) -> Optional[Thread]:
         with self._conn() as conn:
             if model:
@@ -173,4 +182,3 @@ class Store:
         if limit and len(msgs) > limit:
             return msgs[-limit:]
         return msgs
-

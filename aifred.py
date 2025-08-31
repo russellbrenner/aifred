@@ -6,6 +6,9 @@ import sys
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
+
+from store import Store
 
 class AifredDB:
     def __init__(self):
@@ -193,6 +196,66 @@ def main():
         
         for row in results:
             print(f"{row[1]} ({row[2]}) - {row[4]}")
+
+    elif command == "redact":
+        if len(sys.argv) < 3:
+            print("Usage: python aifred.py redact <thread_id> [--mask] [output_path]")
+            return
+        thread_id_s = sys.argv[2]
+        mask = "--mask" in sys.argv
+        output_path: Optional[str] = None
+        for arg in sys.argv[3:]:
+            if arg != "--mask":
+                output_path = arg
+                break
+
+        try:
+            thread_id = int(thread_id_s)
+        except ValueError:
+            print("thread_id must be an integer")
+            return
+
+        store = Store()
+        thread = store.get_thread(thread_id)
+        if not thread:
+            print("Thread not found")
+            return
+        messages = store.get_thread_messages(thread.id)
+
+        def _redact_text(t: str) -> str:
+            if not mask:
+                return t
+            # Basic mask: keep first/last 10 chars
+            return (t[:10] + "…" + t[-10:]) if len(t) > 25 else "[…redacted…]"
+
+        export = {
+            "thread": {
+                "id": thread.id,
+                "provider": thread.provider,
+                "model": thread.model,
+                "name": thread.name,
+                "created_at": thread.created_at,
+                "updated_at": thread.updated_at,
+            },
+            "messages": [
+                {
+                    "id": m.id,
+                    "role": m.role,
+                    "content": _redact_text(m.content),
+                    "meta": m.meta,
+                    "created_at": m.created_at,
+                }
+                for m in messages
+            ],
+        }
+
+        data = json.dumps(export, ensure_ascii=False, indent=2)
+        if output_path:
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(data)
+            print(f"Exported redacted thread to {output_path}")
+        else:
+            print(data)
 
 if __name__ == "__main__":
     main()
