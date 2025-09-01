@@ -28,7 +28,15 @@ class OpenRouterClient:
         payload: Dict = {"model": model, "messages": req_msgs, "temperature": temperature}
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json", "X-Title": os.getenv("OPENROUTER_TITLE", "aifred")}
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "X-Title": os.getenv("OPENROUTER_TITLE", "aifred"),
+        }
+        # Recommended by OpenRouter: HTTP-Referer for rate-limiting attribution
+        ref = os.getenv("OPENROUTER_SITE_URL") or os.getenv("OPENROUTER_REFERRER")
+        if ref:
+            headers["HTTP-Referer"] = ref
         try:
             import os, requests
             if os.getenv("AIFRED_STREAM") == "1":

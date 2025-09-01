@@ -25,6 +25,49 @@ class GeminiClient:
             "error": True,
         }
 
+    def _build_payload(
+        self,
+        system: str,
+        messages: List[Dict],
+        model: str,
+        temperature: float,
+        max_tokens: Optional[int],
+        tools: List[str],
+    ) -> Dict:
+        # Gemini expects contents with role + parts
+        contents = []
+        for m in messages:
+            role = m.get("role", "user")
+            contents.append({"role": role, "parts": [{"text": m.get("content", "")}]} )
+
+        payload: Dict = {
+            "contents": contents,
+            "generationConfig": {"temperature": temperature},
+        }
+        if max_tokens is not None:
+            payload["generationConfig"]["maxOutputTokens"] = max_tokens
+        if system:
+            payload["systemInstruction"] = {"parts": [{"text": system}]}
+        # Tool schemas
+        if tools:
+            try:
+                from utils.tools import openai_tool_defs
+                # Convert our OpenAI-like tool defs to Gemini functionDeclarations
+                tool_defs = openai_tool_defs(tools)
+                fdecls = []
+                for t in tool_defs:
+                    fn = t.get("function", {})
+                    name = fn.get("name")
+                    desc = fn.get("description", "")
+                    params = fn.get("parameters", {"type": "object", "properties": {}})
+                    # Gemini expects JSON schema as-is
+                    fdecls.append({"name": name, "description": desc, "parameters": params})
+                if fdecls:
+                    payload["tools"] = [{"functionDeclarations": fdecls}]
+            except Exception:
+                pass
+        return payload
+
     def send(
         self,
         system: str,
@@ -43,20 +86,7 @@ class GeminiClient:
         if not self.api_key:
             return self._missing_key_error()
 
-        # Gemini expects contents with role + parts
-        contents = []
-        for m in messages:
-            role = m.get("role", "user")
-            contents.append({"role": role, "parts": [{"text": m.get("content", "")}]} )
-
-        payload: Dict = {
-            "contents": contents,
-            "generationConfig": {"temperature": temperature},
-        }
-        if max_tokens is not None:
-            payload["generationConfig"]["maxOutputTokens"] = max_tokens
-        if system:
-            payload["systemInstruction"] = {"parts": [{"text": system}]}
+        payload = self._build_payload(system, messages, model, temperature, max_tokens, tools)
 
         try:
             import requests
@@ -66,11 +96,16 @@ class GeminiClient:
             data = resp.json()
             candidates = data.get("candidates", [])
             text = ""
+            tool_calls = []
             if candidates:
                 parts = candidates[0].get("content", {}).get("parts", [])
-                if parts:
-                    text = parts[0].get("text", "")
+                for part in parts:
+                    if "text" in part:
+                        text += part.get("text", "")
+                    elif "functionCall" in part:
+                        fc = part["functionCall"]
+                        tool_calls.append({"name": fc.get("name"), "arguments": fc.get("args", {})})
             usage = data.get("usageMetadata", {})
-            return {"text": text, "tool_calls": [], "usage": usage}
+            return {"text": text, "tool_calls": tool_calls, "usage": usage}
         except Exception as e:
             return {"text": f"Error contacting Gemini: {e}", "tool_calls": [], "usage": {}, "error": True}

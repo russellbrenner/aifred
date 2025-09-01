@@ -57,6 +57,9 @@ class PerplexityClient:
         }
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
+        # Perplexity: enable citations when browsing requested
+        if tools:
+            payload["return_citations"] = True
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -78,4 +81,3 @@ class PerplexityClient:
             return {"text": text, "tool_calls": [], "usage": usage}
         except Exception as e:
             return {"text": f"Error contacting Perplexity: {e}", "tool_calls": [], "usage": {}, "error": True}
-

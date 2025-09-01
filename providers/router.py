@@ -65,7 +65,10 @@ PROVIDER_CAPS: Dict[str, ProviderCapability] = {
         "tool_names": {"browse", "code", "fetch_url", "citation_extract", "case_search"},
     },
     "perplexity": {"tool_use": False, "tool_names": set()},
-    "gemini": {"tool_use": False, "tool_names": set()},
+    "gemini": {
+        "tool_use": True,
+        "tool_names": {"browse", "code", "python", "fetch_url", "citation_extract", "case_search"},
+    },
     "openrouter": {"tool_use": False, "tool_names": set()},
 }
 
