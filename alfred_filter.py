@@ -73,6 +73,9 @@ def build_items(query: str) -> str:
             defs = get_defaults()
             if defs.legal_mode and not d.tools:
                 summary = (summary + (" | " if summary else "")) + "tools: " + ",".join(defs.legal_tools)
+            # Show persona
+            if defs.persona_name:
+                summary = (summary + (" | " if summary else "")) + f"persona: {defs.persona_name}"
         except Exception:
             pass
         payload = {

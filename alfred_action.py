@@ -21,6 +21,16 @@ from utils.notify import notify
 def _load_system_prompt(directives_sys: str | None) -> str:
     if directives_sys:
         return directives_sys
+    # Persona prompt takes precedence if configured
+    try:
+        from utils.config import get_defaults, DEFAULT_LEGAL_PROMPT
+        defs = get_defaults()
+        if defs.persona_prompt:
+            return defs.persona_prompt
+        if defs.legal_mode:
+            return DEFAULT_LEGAL_PROMPT
+    except Exception:
+        pass
     path = os.getenv("AIFRED_SYSTEM_PROMPT_PATH")
     if path and os.path.exists(path):
         try:
@@ -155,7 +165,14 @@ def handle_action(arg: str) -> None:
     tool_calls = resp.get("tool_calls", [])
 
     # Tool execution loop (single pass)
-    if os.getenv("AIFRED_TOOL_EXEC") == "1" and tool_calls:
+    tool_exec = os.getenv("AIFRED_TOOL_EXEC") == "1"
+    if not tool_exec:
+        try:
+            from utils.user_config import get_option
+            tool_exec = bool(get_option("tool_exec", False))
+        except Exception:
+            tool_exec = False
+    if tool_exec and tool_calls:
         from utils.tool_runtime import execute_tool_call
         for call in tool_calls:
             name = call.get("name")

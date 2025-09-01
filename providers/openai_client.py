@@ -94,8 +94,13 @@ class OpenAIClient:
 
         try:
             import os
+            try:
+                from utils.user_config import get_option as _getopt
+                stream_cfg = bool(_getopt("stream", os.getenv("AIFRED_STREAM") == "1"))
+            except Exception:
+                stream_cfg = os.getenv("AIFRED_STREAM") == "1"
             import requests  # lazy import to allow dry-run without dependency
-            if os.getenv("AIFRED_STREAM") == "1":
+            if stream_cfg:
                 # Stream tokens and accumulate final text
                 with requests.post(
                     "https://api.openai.com/v1/chat/completions",
