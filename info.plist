@@ -403,7 +403,7 @@
 	<key>uidata</key>
 	<dict/>
 	<key>version</key>
-	<string>110</string>
+	<integer>110</integer>
 	<key>webaddress</key>
 	<string>https://github.com/russellbrenner/aifred</string>
 </dict>
