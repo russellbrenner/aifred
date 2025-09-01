@@ -108,6 +108,14 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `alfred_attach.py <file>` — Creates a new thread named after the file and posts a short summary (uses pandoc if available, plain text fallback).
   - You can wire this as a Universal Action in Alfred for quick “Attach Document”.
 
+### Personas
+- Script Filter: `alfred_personas.py` — keyword e.g. `ai-persona`.
+  - Type: `new <name>: <prompt>` to create and activate a persona.
+  - Type: `edit <name>: <prompt>` to update an existing persona's prompt.
+  - Enter on a persona to activate; Alt-Enter to delete.
+  - The active persona's prompt is used as the system prompt. `legal` persona defaults to an Australian English legal-research prompt and enables legal tools unless overridden.
+
+
 ### Directive Cheatsheet
 - `@gpt-4o`, `@o4-mini`, `@claude-3-7-sonnet` → model
 - `@temp:0.7` → temperature
