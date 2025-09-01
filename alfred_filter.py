@@ -57,6 +57,13 @@ def build_items(query: str) -> str:
     # When query text exists, show "Send" option first
     if cleaned:
         summary = summarise_directives(d)
+        # If legal mode and no explicit tools, show intended default tools
+        try:
+            defs = get_defaults()
+            if defs.legal_mode and not d.tools:
+                summary = (summary + (" | " if summary else "")) + "tools: " + ",".join(defs.legal_tools)
+        except Exception:
+            pass
         payload = {
             "query": cleaned,
             "directives": d.to_dict(),

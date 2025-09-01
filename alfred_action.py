@@ -80,6 +80,15 @@ def handle_action(arg: str) -> None:
 
     provider, model = _resolve_provider_model(d)
     tools_requested = d.tools or []
+    # Legal mode default tools
+    if not tools_requested:
+        try:
+            from utils.config import get_defaults as _gd
+            _defs = _gd()
+            if _defs.legal_mode:
+                tools_requested = list(_defs.legal_tools)
+        except Exception:
+            pass
     tools_supported, tools_dropped = validate_tools(provider, tools_requested)
 
     system_prompt = _load_system_prompt(d.sys)

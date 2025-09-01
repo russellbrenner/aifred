@@ -88,6 +88,8 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `AIFRED_NOTIFY=1` (show macOS notifications on send)
 - `AIFRED_TOOL_EXEC=1` (execute tool_calls once and re-send)
 - `AIFRED_PROFILE` (logical profile name; default `default`)
+- `AIFRED_STREAM=1` (enable streaming for OpenAI requests, internal accumulation)
+- `AIFRED_LEGAL_MODE=1` (enable default legal-research tools when not specified)
 
 ## Usage
 
@@ -105,6 +107,7 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `@cont` → continue most recent (provider/model if specified)
 - `@tools:browse,code,python,fetch_url,citation_extract,case_search` → request tools (provider-validated)
   - With `AIFRED_TOOL_EXEC=1`, supported tool calls execute once and are included in a follow-up response.
+  - With `AIFRED_LEGAL_MODE=1` and no explicit tools, the default toolset is used: browse, fetch_url, citation_extract, case_search.
 
 ### Examples
 ```

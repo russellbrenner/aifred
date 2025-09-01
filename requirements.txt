@@ -1,2 +1,5 @@
 requests==2.31.0
 tiktoken==0.7.0
+readability-lxml==0.8.1
+lxml==4.9.4
+cssselect==1.2.0

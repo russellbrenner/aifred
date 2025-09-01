@@ -12,6 +12,8 @@ class Defaults:
     model_anthropic: str
     max_input_tokens: int
     profile: str
+    legal_mode: bool
+    legal_tools: list[str]
 
 
 def get_defaults() -> Defaults:
@@ -26,9 +28,11 @@ def get_defaults() -> Defaults:
         from utils.user_config import get_option
         profile = get_option("profile", profile)
         max_input_tokens = int(get_option("max_input_tokens", max_input_tokens))
+        legal_mode = bool(get_option("legal_mode", os.getenv("AIFRED_LEGAL_MODE") == "1"))
     except Exception:
-        pass
-    return Defaults(provider, model_openai, model_anthropic, max_input_tokens, profile)
+        legal_mode = os.getenv("AIFRED_LEGAL_MODE") == "1"
+    legal_tools = ["browse", "fetch_url", "citation_extract", "case_search"]
+    return Defaults(provider, model_openai, model_anthropic, max_input_tokens, profile, legal_mode, legal_tools)
 
 
 def get_bool(name: str, default: bool = False) -> bool:

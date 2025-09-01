@@ -93,20 +93,50 @@ class OpenAIClient:
         }
 
         try:
+            import os
             import requests  # lazy import to allow dry-run without dependency
-            resp = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=60,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            choice = data["choices"][0]["message"]
-            text = choice.get("content", "")
-            tool_calls = choice.get("tool_calls", [])
-            usage = data.get("usage", {})
-            return {"text": text, "tool_calls": tool_calls, "usage": usage}
+            if os.getenv("AIFRED_STREAM") == "1":
+                # Stream tokens and accumulate final text
+                with requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json={**payload, "stream": True},
+                    timeout=60,
+                    stream=True,
+                ) as r:
+                    r.raise_for_status()
+                    text_accum = []
+                    for line in r.iter_lines(decode_unicode=True):
+                        if not line:
+                            continue
+                        if line.startswith("data: "):
+                            data_str = line[len("data: ") :].strip()
+                            if data_str == "[DONE]":
+                                break
+                            try:
+                                import json as _json
+                                evt = _json.loads(data_str)
+                                delta = evt.get("choices", [{}])[0].get("delta", {})
+                                if "content" in delta:
+                                    text_accum.append(delta["content"])
+                            except Exception:
+                                continue
+                    final_text = "".join(text_accum)
+                    return {"text": final_text, "tool_calls": [], "usage": {}}
+            else:
+                resp = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=60,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                choice = data["choices"][0]["message"]
+                text = choice.get("content", "")
+                tool_calls = choice.get("tool_calls", [])
+                usage = data.get("usage", {})
+                return {"text": text, "tool_calls": tool_calls, "usage": usage}
         except Exception as e:
             return {
                 "text": f"Error contacting OpenAI: {e}",

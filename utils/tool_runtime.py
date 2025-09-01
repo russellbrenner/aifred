@@ -73,11 +73,19 @@ def run_fetch_url(args: Dict[str, Any]) -> Dict[str, Any]:
         r = requests.get(url, timeout=15, headers={"User-Agent": "aifred/1.0"})
         r.raise_for_status()
         html = r.text
-        # crude text extraction
-        text = re.sub(r"<script[\s\S]*?</script>", "", html, flags=re.I)
-        text = re.sub(r"<style[\s\S]*?</style>", "", text, flags=re.I)
-        text = re.sub(r"<[^>]+>", " ", text)
-        text = re.sub(r"\s+", " ", text).strip()
+        try:
+            from readability import Document  # readability-lxml
+            doc = Document(html)
+            summary_html = doc.summary(html_partial=True)
+            # remove HTML tags to text
+            text = re.sub(r"<[^>]+>", " ", summary_html)
+            text = re.sub(r"\s+", " ", text).strip()
+        except Exception:
+            # fallback crude extraction
+            text = re.sub(r"<script[\s\S]*?</script>", "", html, flags=re.I)
+            text = re.sub(r"<style[\s\S]*?</style>", "", text, flags=re.I)
+            text = re.sub(r"<[^>]+>", " ", text)
+            text = re.sub(r"\s+", " ", text).strip()
         # limit
         return {"url": url, "text": text[:5000]}
     except Exception as e:
