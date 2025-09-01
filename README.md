@@ -226,7 +226,7 @@ aifred/
 └── build_workflow.py     # Package .alfredworkflow
 ```
 
-See [AGENTS.md](AGENTS.md) for the iterative development plan and adherence to Alfred community standards. For deeper architectural notes, read [docs/architecture.md](docs/architecture.md).
+See [AGENTS.md](AGENTS.md) for the iterative development plan and adherence to Alfred community standards. For deeper architectural notes, read [docs/architecture.md](docs/architecture.md). For model caps and overrides, read [docs/models.md](docs/models.md).
 
 ## Contributing
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
