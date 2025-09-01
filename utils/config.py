@@ -10,6 +10,9 @@ class Defaults:
     provider: str
     model_openai: str
     model_anthropic: str
+    model_perplexity: str
+    model_gemini: str
+    model_openrouter: str
     max_input_tokens: int
     profile: str
     legal_mode: bool
@@ -24,6 +27,9 @@ def get_defaults() -> Defaults:
     provider = os.getenv("AIFRED_PROVIDER_DEFAULT", "openai").lower()
     model_openai = os.getenv("AIFRED_MODEL_DEFAULT_OPENAI", "gpt-4o")
     model_anthropic = os.getenv("AIFRED_MODEL_DEFAULT_ANTHROPIC", "claude-3-7-sonnet")
+    model_perplexity = os.getenv("AIFRED_MODEL_DEFAULT_PERPLEXITY", "llama-3.1-70b-instruct")
+    model_gemini = os.getenv("AIFRED_MODEL_DEFAULT_GEMINI", "gemini-1.5-pro")
+    model_openrouter = os.getenv("AIFRED_MODEL_DEFAULT_OPENROUTER", "openrouter/anthropic/claude-3.5-sonnet")
     # Rough input token cap for history (independent of output max)
     max_input_tokens = int(os.getenv("AIFRED_MAX_INPUT_TOKENS", "4000"))
     profile = os.getenv("AIFRED_PROFILE", "default")
@@ -63,6 +69,9 @@ def get_defaults() -> Defaults:
         provider,
         model_openai,
         model_anthropic,
+        model_perplexity,
+        model_gemini,
+        model_openrouter,
         max_input_tokens,
         profile,
         legal_mode,

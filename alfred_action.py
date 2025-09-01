@@ -9,6 +9,9 @@ from typing import Dict, List
 
 from providers.anthropic_client import AnthropicClient
 from providers.openai_client import OpenAIClient
+from providers.perplexity_client import PerplexityClient
+from providers.gemini_client import GeminiClient
+from providers.openrouter_client import OpenRouterClient
 from providers.router import route, validate_tools
 from store import Store
 from utils.budget import trim_history
@@ -42,18 +45,35 @@ def _load_system_prompt(directives_sys: str | None) -> str:
 
 
 def _get_client(provider: str):
-    return OpenAIClient() if provider == "openai" else AnthropicClient()
+    if provider == "openai":
+        return OpenAIClient()
+    if provider == "anthropic":
+        return AnthropicClient()
+    if provider == "perplexity":
+        return PerplexityClient()
+    if provider == "gemini":
+        return GeminiClient()
+    if provider == "openrouter":
+        return OpenRouterClient()
+    return OpenAIClient()
 
 
 def _resolve_provider_model(d: Directives) -> tuple[str, str]:
     defaults = get_defaults()
-    provider_default, model_openai, model_anthropic = (
-        defaults.provider,
-        defaults.model_openai,
-        defaults.model_anthropic,
-    )
+    provider_default = defaults.provider
     provider = route(d.model, d.provider) if (d.model or d.provider) else provider_default
-    model = d.model or (model_openai if provider == "openai" else model_anthropic)
+    if provider == "openai":
+        model = d.model or defaults.model_openai
+    elif provider == "anthropic":
+        model = d.model or defaults.model_anthropic
+    elif provider == "perplexity":
+        model = d.model or defaults.model_perplexity
+    elif provider == "gemini":
+        model = d.model or defaults.model_gemini
+    elif provider == "openrouter":
+        model = d.model or defaults.model_openrouter
+    else:
+        model = d.model or defaults.model_openai
     return provider, model
 
 

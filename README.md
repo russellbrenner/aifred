@@ -77,9 +77,15 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 ### Environment Variables
 - `OPENAI_API_KEY` (required for OpenAI)
 - `ANTHROPIC_API_KEY` (required for Anthropic)
-- `AIFRED_PROVIDER_DEFAULT` = `openai` | `anthropic` (default: `openai`)
+- `AIFRED_PROVIDER_DEFAULT` = `openai` | `anthropic` | `perplexity` | `gemini` | `openrouter` (default: `openai`)
 - `AIFRED_MODEL_DEFAULT_OPENAI` (default: `gpt-4o`)
 - `AIFRED_MODEL_DEFAULT_ANTHROPIC` (default: `claude-3-7-sonnet`)
+- `AIFRED_MODEL_DEFAULT_PERPLEXITY` (default: `llama-3.1-70b-instruct`)
+- `AIFRED_MODEL_DEFAULT_GEMINI` (default: `gemini-1.5-pro`)
+- `AIFRED_MODEL_DEFAULT_OPENROUTER` (default: `openrouter/anthropic/claude-3.5-sonnet`)
+  - `OPENROUTER_API_KEY` required for OpenRouter
+  - `PERPLEXITY_API_KEY` required for Perplexity
+  - `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) required for Gemini
 - `AIFRED_SYSTEM_PROMPT_PATH` (optional system prompt file)
 - `AIFRED_DB_PATH` (optional; else Alfred data dir or `./aifred.db`)
 - `AIFRED_DRY_RUN=1` (stub responses for local tests)

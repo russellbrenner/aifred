@@ -17,16 +17,20 @@ def alfred_items(items):
 
 def _resolve_provider_model(model_hint, provider_hint):
     defaults = get_defaults()
-    provider_default, model_openai, model_anthropic = (
-        defaults.provider,
-        defaults.model_openai,
-        defaults.model_anthropic,
-    )
+    provider_default = defaults.provider
     provider = route(model_hint, provider_hint) if (model_hint or provider_hint) else provider_default
     if provider == "openai":
-        model = model_hint or model_openai
+        model = model_hint or defaults.model_openai
+    elif provider == "anthropic":
+        model = model_hint or defaults.model_anthropic
+    elif provider == "perplexity":
+        model = model_hint or defaults.model_perplexity
+    elif provider == "gemini":
+        model = model_hint or defaults.model_gemini
+    elif provider == "openrouter":
+        model = model_hint or defaults.model_openrouter
     else:
-        model = model_hint or model_anthropic
+        model = model_hint or defaults.model_openai
     return provider, model
 
 

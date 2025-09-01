@@ -18,13 +18,25 @@ ANTHROPIC_PREFIXES: Tuple[str, ...] = (
     "claude-",
 )
 
+GEMINI_PREFIXES: Tuple[str, ...] = (
+    "gemini-",
+)
+
+OPENROUTER_PREFIXES: Tuple[str, ...] = (
+    "openrouter/",
+)
+
+PERPLEXITY_PREFIXES: Tuple[str, ...] = (
+    "pplx-",
+)
+
 
 def route(model_hint: Optional[str], provider_hint: Optional[str]) -> str:
-    """Return "openai" or "anthropic" using model prefixes or hint.
+    """Return provider using model prefixes or hint.
 
     Priority: explicit provider_hint -> model prefix mapping -> default "openai".
     """
-    if provider_hint in {"openai", "anthropic"}:
+    if provider_hint in {"openai", "anthropic", "perplexity", "gemini", "openrouter"}:
         return provider_hint
 
     if model_hint:
@@ -33,6 +45,12 @@ def route(model_hint: Optional[str], provider_hint: Optional[str]) -> str:
             return "openai"
         if any(m.startswith(p) for p in ANTHROPIC_PREFIXES):
             return "anthropic"
+        if any(m.startswith(p) for p in GEMINI_PREFIXES):
+            return "gemini"
+        if any(m.startswith(p) for p in OPENROUTER_PREFIXES):
+            return "openrouter"
+        if any(m.startswith(p) for p in PERPLEXITY_PREFIXES):
+            return "perplexity"
 
     return "openai"
 
@@ -46,6 +64,9 @@ PROVIDER_CAPS: Dict[str, ProviderCapability] = {
         "tool_use": True,
         "tool_names": {"browse", "code", "fetch_url", "citation_extract", "case_search"},
     },
+    "perplexity": {"tool_use": False, "tool_names": set()},
+    "gemini": {"tool_use": False, "tool_names": set()},
+    "openrouter": {"tool_use": False, "tool_names": set()},
 }
 
 
