@@ -7,29 +7,403 @@
 	<key>category</key>
 	<string>Internet</string>
 	<key>connections</key>
-	<dict/>
+	<dict>
+		<key>051B7F74-FEC2-4F87-A8BA-0A9A60C6AB7A</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>4981C04A-5823-4A35-8360-B4B05931877B</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>3EC67D55-35A8-4536-B828-12E5E283EC26</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>F47B5A7D-AE59-4C25-A54E-6FA0282020BF</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>468D7A4D-825D-4FF5-BA9A-1364C654E3E4</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>800397AC-029C-42BB-92EB-DBA28CDF3225</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>A9F05F5D-9507-444B-8903-2595F7F17A5A</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>AE714DDF-60AE-497D-99C4-11F011F6908B</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>B2250943-F953-4D3A-A858-76B4FE7055FA</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>3B05C8DF-9C88-48B7-9780-544B34A49D88</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>BC67E009-EA34-4F4B-BED8-5DE01E9E54F9</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>42F1225D-2CD8-4613-AE98-ADB64F727D9B</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+	</dict>
 	<key>createdby</key>
 	<string>Russell Brenner</string>
 	<key>description</key>
-	<string>AI conversation manager with history import and search</string>
+	<string>AI conversation manager with multi-provider chat, tools, and actions</string>
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
 	<string>Aifred</string>
 	<key>objects</key>
-	<array/>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>ai</string>
+				<key>queuedelaycustom</key>
+				<integer>0</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<false/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string>Thinking…</string>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_filter.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>subtext</key>
+				<string></string>
+				<key>title</key>
+				<string>Aifred</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>3EC67D55-35A8-4536-B828-12E5E283EC26</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_action.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>F47B5A7D-AE59-4C25-A54E-6FA0282020BF</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>ai-settings</string>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_settings.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>title</key>
+				<string>Aifred Settings</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>A9F05F5D-9507-444B-8903-2595F7F17A5A</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_settings.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>AE714DDF-60AE-497D-99C4-11F011F6908B</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>ai-persona</string>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_personas.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>title</key>
+				<string>Aifred Personas</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>BC67E009-EA34-4F4B-BED8-5DE01E9E54F9</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_personas.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>42F1225D-2CD8-4613-AE98-ADB64F727D9B</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>ai-actions</string>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_actions_filter.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>title</key>
+				<string>Aifred Actions</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>B2250943-F953-4D3A-A858-76B4FE7055FA</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_actions_run.py" "{query}" "{clipboard}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>3B05C8DF-9C88-48B7-9780-544B34A49D88</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>ai-models</string>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_models.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>title</key>
+				<string>Aifred Models</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>468D7A4D-825D-4FF5-BA9A-1364C654E3E4</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_models.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>800397AC-029C-42BB-92EB-DBA28CDF3225</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>acceptsfiles</key>
+				<true/>
+				<key>acceptsmulti</key>
+				<true/>
+				<key>name</key>
+				<string>Attach &amp; Summarize with Aifred</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.action</string>
+			<key>uid</key>
+			<string>051B7F74-FEC2-4F87-A8BA-0A9A60C6AB7A</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>script</key>
+				<string>/usr/bin/python3 "$PWD/alfred_attach.py" "{query}"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>type</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>4981C04A-5823-4A35-8360-B4B05931877B</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+	</array>
 	<key>readme</key>
-	<string>Aifred - AI Conversation Manager for Alfred
-
-Features:
-- Import ChatGPT/Claude conversation history
-- Search and filter past conversations
-- Continue conversations with context
-- Multi-platform AI support</string>
+	<string>See README.md</string>
 	<key>uidata</key>
 	<dict/>
 	<key>version</key>
-	<string>1.0.0</string>
+	<string>1.1.0</string>
 	<key>webaddress</key>
 	<string>https://github.com/russellbrenner/aifred</string>
 </dict>

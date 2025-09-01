@@ -122,6 +122,13 @@ def handle_action(arg: str) -> None:
     tools_supported, tools_dropped = validate_tools(provider, tools_requested)
 
     system_prompt = _load_system_prompt(d.sys)
+    # Inline Perplexity options into system string using a marker for the client to parse
+    if provider == "perplexity" and getattr(d, "pplx", None):
+        import json as _json
+        try:
+            system_prompt = f"{system_prompt}\n\n[PPLX_OPTS:{_json.dumps(d.pplx)}]"
+        except Exception:
+            pass
 
     # Resolve thread
     thread_hint = payload.get("thread_hint")

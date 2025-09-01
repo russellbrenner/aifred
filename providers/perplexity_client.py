@@ -35,6 +35,21 @@ class PerplexityClient:
         max_tokens: Optional[int],
         tools: List[str],
     ) -> Dict:
+        # Extract inline PPLX options from system string: [PPLX_OPTS:{json}]
+        pplx_opts = {}
+        if system and "[PPLX_OPTS:" in system:
+            try:
+                marker = system.split("[PPLX_OPTS:", 1)[1]
+                json_part = marker.split("]", 1)[0]
+                import json as _json
+                pplx_opts = _json.loads(json_part)
+            except Exception:
+                pplx_opts = {}
+            # strip marker from system
+            try:
+                system = system.replace(f"[PPLX_OPTS:{json_part}]", "").strip()
+            except Exception:
+                pass
         if self.dry_run:
             return {
                 "text": f"[dry-run perplexity:{model}] {messages[-1]['content']}",
@@ -57,9 +72,20 @@ class PerplexityClient:
         }
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
-        # Perplexity: enable citations when browsing requested
+        # Perplexity options
         if tools:
             payload["return_citations"] = True
+        # Map selected PPLX options
+        if pplx_opts.get("recency"):
+            payload["search_recency"] = pplx_opts["recency"]
+        if pplx_opts.get("depth"):
+            payload["search_depth"] = pplx_opts["depth"]
+        if pplx_opts.get("domain"):
+            payload["search_domain"] = pplx_opts["domain"]
+        if pplx_opts.get("citations") is not None:
+            payload["return_citations"] = str(pplx_opts["citations"]).lower() in {"1", "true", "yes", "on"}
+        if pplx_opts.get("images") is not None:
+            payload["return_images"] = str(pplx_opts["images"]).lower() in {"1", "true", "yes", "on"}
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",

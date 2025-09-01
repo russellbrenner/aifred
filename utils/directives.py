@@ -31,6 +31,7 @@ class Directives:
     new: bool = False
     tools: List[str] = field(default_factory=list)
     sys: Optional[str] = None
+    pplx: Dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> Dict:
         return {
@@ -129,6 +130,25 @@ def parse_directives(text: str) -> Tuple[str, Directives]:
             remove_spans.append(m.span())
             continue
 
+        # Perplexity options: @pplx_recency:month, @pplx_depth:detailed, @pplx_domain:law, @pplx_citations:1, @pplx_images:0
+        if key_l.startswith("pplx_") and val is not None:
+            directives.pplx[key_l[5:]] = val
+            remove_spans.append(m.span())
+            continue
+
+        if key_l == "pplx" and val is not None:
+            # comma-separated k=v pairs
+            try:
+                pairs = [x.strip() for x in val.split(",") if x.strip()]
+                for pr in pairs:
+                    if "=" in pr:
+                        k, v = pr.split("=", 1)
+                        directives.pplx[k.strip()] = v.strip()
+                remove_spans.append(m.span())
+                continue
+            except Exception:
+                pass
+
         # Model provided via @model:value (rare) or @gpt-4 style handled earlier
         if key_l == "model" and val is not None:
             directives.model = val
@@ -173,4 +193,3 @@ def summarise_directives(d: Directives) -> str:
     if d.cont:
         parts.append("cont")
     return " | ".join(parts) if parts else "defaults"
-
