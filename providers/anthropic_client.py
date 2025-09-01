@@ -53,8 +53,15 @@ class AnthropicClient:
             "model": model,
             "messages": anthropic_messages,
             "temperature": temperature,
-            "max_tokens": max_tokens or 1024,
+            "max_tokens": max_tokens if max_tokens is not None else 0,
         }
+        if payload["max_tokens"] == 0:
+            try:
+                from utils.models import get_caps
+                caps = get_caps("anthropic", model)
+                payload["max_tokens"] = caps.get("max_output_tokens", 1024)
+            except Exception:
+                payload["max_tokens"] = 1024
         if system:
             payload["system"] = system
 

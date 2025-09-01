@@ -150,6 +150,9 @@ Continue @cont and refine the migration plan @temp:0.2
   - `citation_extract`: Extracts basic case and U.S.C. citations from provided text.
   - `case_search`: Queries CourtListener API for cases (best-effort, public API).
   Results are appended as tool messages and a second model call is made.
+ - Token limits: If you don’t specify `@max`, aifred uses the provider’s maximum supported output tokens for the selected model, and sets the input budget to (context window − output tokens). Defaults (subject to provider change):
+   - OpenAI `gpt-4o`/`o4-mini`: context ≈ 128k, default max output ≈ 4096
+   - Anthropic `claude-3-7-sonnet`: context ≈ 200k, default max output ≈ 8192
 
 ## Testing
 Run all tests:

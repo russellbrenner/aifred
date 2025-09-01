@@ -51,6 +51,13 @@ class OpenAIClient:
         }
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
+        else:
+            try:
+                from utils.models import get_caps
+                caps = get_caps("openai", model)
+                payload["max_tokens"] = caps.get("max_output_tokens", 1024)
+            except Exception:
+                payload["max_tokens"] = 1024
 
         # Tool schemas (placeholders, not executed here)
         if tools:

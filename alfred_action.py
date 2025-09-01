@@ -143,11 +143,19 @@ def handle_action(arg: str) -> None:
     client = _get_client(provider)
     # Token budgeting / history trimming (approximate)
     defaults = get_defaults()
+    # Determine model caps and compute input budget (context - output)
+    try:
+        from utils.models import get_caps
+        caps = get_caps(provider, model)
+    except Exception:
+        caps = {"context": defaults.max_input_tokens or 4000, "max_output_tokens": int(d.max) if d.max else 1024}
+    planned_out_tokens = int(d.max) if d.max is not None else caps.get("max_output_tokens", 1024)
+    input_budget = max(1, caps.get("context", defaults.max_input_tokens) - planned_out_tokens)
     trimmed_history, _est = trim_history(
         history,
         system=_load_system_prompt(None) if not d.sys else d.sys,
-        max_input_tokens=defaults.max_input_tokens,
-        reserve_for_completion=int(d.max) if d.max else 400,
+        max_input_tokens=input_budget,
+        reserve_for_completion=planned_out_tokens,
     )
 
     resp = client.send(
@@ -155,7 +163,7 @@ def handle_action(arg: str) -> None:
         messages=trimmed_history,
         model=model,
         temperature=float(d.temp) if d.temp is not None else 0.4,
-        max_tokens=int(d.max) if d.max is not None else None,
+        max_tokens=planned_out_tokens,
         tools=tools_supported,
     )
 
