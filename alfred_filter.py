@@ -33,6 +33,16 @@ def _resolve_provider_model(model_hint, provider_hint):
 def _thread_item(t) -> dict:
     title = t.name or "(untitled)"
     subtitle = f"{t.provider} {t.model} • {t.updated_at}"
+    # Provide Large Type and copy previews using the last assistant message
+    # We fetch on-demand in alfred_action if needed, but also surface via text field when available
+    # Note: Alfred shows Large Type with ⌘L
+    try:
+        store = Store()
+        msgs = store.get_thread_messages(t.id, limit=1_000)
+        last_assistant = next((m for m in reversed(msgs) if m.role == "assistant" and m.content), None)
+        preview = last_assistant.content if last_assistant else ""
+    except Exception:
+        preview = ""
     payload = {
         "query": "",
         "directives": {"cont": True, "provider": t.provider, "model": t.model, "name": t.name},
@@ -40,9 +50,10 @@ def _thread_item(t) -> dict:
     }
     return {
         "uid": f"thread-{t.id}",
-        "title": title,
+        "title": f"{title}",
         "subtitle": subtitle,
         "arg": json.dumps(payload),
+        "text": {"copy": preview, "largetype": f"{title}\n\n{preview[:2000]}"} if preview else None,
     }
 
 

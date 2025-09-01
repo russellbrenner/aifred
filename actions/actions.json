@@ -1,0 +1,28 @@
+[
+  {
+    "id": "summarize",
+    "title": "Summarize",
+    "prompt": "Summarize the following text in a concise paragraph:\n\n{{text}}"
+  },
+  {
+    "id": "paraphrase",
+    "title": "Paraphrase",
+    "prompt": "Paraphrase the following text to improve clarity while preserving meaning:\n\n{{text}}"
+  },
+  {
+    "id": "simplify",
+    "title": "Simplify",
+    "prompt": "Rewrite the following text in simpler language for a general audience:\n\n{{text}}"
+  },
+  {
+    "id": "explain",
+    "title": "Explain",
+    "prompt": "Explain the following text and provide context as needed:\n\n{{text}}"
+  },
+  {
+    "id": "tone-polite",
+    "title": "Adjust Tone: Polite",
+    "prompt": "Rewrite the following text to be polite and professional:\n\n{{text}}"
+  }
+]
+
