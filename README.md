@@ -97,6 +97,17 @@ Note: If your Python is at a different path (e.g., Homebrew), adjust `/usr/bin/p
 - `ai` → List recent threads.
 - `ai <message with @directives>` → Top result “Send to {provider model}” plus recent threads.
 
+### Inference Actions (like Ayai)
+- Script Filter: `alfred_actions_filter.py` — keyword e.g. `ai-actions`.
+  - Type instructions to generate a custom action or pick a preset.
+  - Enter: copy result; Cmd-Enter: paste (replace selection); Alt-Enter: stream.
+- Runner: `alfred_actions_run.py` — connected Run Script consuming `{query}` and `{clipboard}` or selected text.
+  - By default, uses your provider defaults; outputs transformed text only.
+
+### File Attachments (basic)
+- `alfred_attach.py <file>` — Creates a new thread named after the file and posts a short summary (uses pandoc if available, plain text fallback).
+  - You can wire this as a Universal Action in Alfred for quick “Attach Document”.
+
 ### Directive Cheatsheet
 - `@gpt-4o`, `@o4-mini`, `@claude-3-7-sonnet` → model
 - `@temp:0.7` → temperature
@@ -177,6 +188,9 @@ aifred/
 ├── aifred.py             # Legacy import/search + redact utility
 ├── alfred_filter.py      # Alfred Script Filter (list threads, prepare send payload)
 ├── alfred_action.py      # Action: resolve thread, call provider, persist
+├── alfred_actions_filter.py # Inference Actions Script Filter
+├── alfred_actions_run.py  # Inference Actions runner
+├── alfred_attach.py       # Universal Action: attach & summarize document
 ├── alfred_settings.py    # Script Filter for settings UI (optional)
 ├── providers/
 │   ├── router.py         # Provider routing + capability map
@@ -197,6 +211,7 @@ aifred/
 ├── info.plist            # Alfred workflow configuration (packaging)
 ├── requirements.txt      # Python dependencies
 └── setup.py              # Installation script
+├── actions/actions.json  # Preset inference actions
 └── build_workflow.py     # Package .alfredworkflow
 ```
 
