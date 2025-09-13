@@ -1,4 +1,4 @@
-requests==2.31.0
+requests==2.32.4
 tiktoken==0.7.0
 readability-lxml==0.8.1
 lxml==4.9.4
